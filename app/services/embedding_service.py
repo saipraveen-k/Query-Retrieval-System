@@ -1,11 +1,17 @@
 import openai
 from app.core.config import settings
 
-openai.api_key = settings.OPENAI_API_KEY
+# Initialize OpenAI client
+client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
 async def get_embedding(text: str) -> list:
-    resp = openai.embeddings.create(
-        input=[text],
-        model="text-embedding-ada-002"
-    )
-    return resp['data'][0]['embedding']
+    """Generate embeddings using OpenAI API."""
+    try:
+        response = client.embeddings.create(
+            model="text-embedding-ada-002",
+            input=text
+        )
+        return response.data[0].embedding
+    except Exception as e:
+        print(f"Error generating embedding: {e}")
+        return []

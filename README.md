@@ -83,7 +83,7 @@ POST /api/v1/hackrx/run
 "Does the policy cover knee surgery in Pune?",
 "What is the waiting period for cataract surgery?"
 ],
-"file_path": "data/.bajajpdf"
+"file_path": "C:\\Users\\saipr\\Query-Retrieval-System\\data\\BAJAJ.pdf"
 }
 
 
