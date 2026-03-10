@@ -1,13 +1,44 @@
-import pinecone
-from app.models.chunk import Chunk
+import logging
 
-async def store_chunk_with_embedding(chunk, embedding, filename, db_session, pinecone_index):
-    pinecone_id = f"{filename}_{hash(chunk)}"
-    pinecone_index.upsert([(pinecone_id, embedding)])
-    db_chunk = Chunk(filename=filename, chunk_text=chunk, embedding_id=pinecone_id)
-    db_session.add(db_chunk)
-    await db_session.commit()
+async def retrieve_topk_chunks(query_embedding: list, pinecone_index, top_k: int = 5):
+    """
+    Retrieve top-k most relevant chunks from Pinecone based on query embedding.
+    
+    Args:
+        query_embedding: The embedding vector for the query
+        pinecone_index: Pinecone index instance
+        top_k: Number of top chunks to retrieve
+    
+    Returns:
+        List of chunk IDs that are most relevant to the query
+    """
+    try:
+        # Query Pinecone with the embedding
+        results = pinecone_index.query(
+            vector=query_embedding,
+            top_k=top_k,
+            include_metadata=True
+        )
+        
+        # Extract chunk IDs from results
+        chunk_ids = [match.id for match in results.matches]
+        return chunk_ids
+        
+    except Exception as e:
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error retrieving chunks: {str(e)}")
+        return []
 
-async def retrieve_topk_chunks(question_embedding, pinecone_index, k=5):
-    results = pinecone_index.query(vector=question_embedding, top_k=k, include_metadata=False)
-    return [match['id'] for match in results['matches']]
+def retrieve_context(question: str, file_id: str):
+    # existing Pinecone query code...
+    chunks = pinecone_query(question, file_id)  # pseudocode — replace with your function
+    if not chunks:
+        # No relevant text found, skip LLM
+        return {
+            "decision": "not sure",
+            "justification": "No relevant clause found in the provided context.",
+            "source_clauses": []
+        }
+    # join chunk texts into one context string
+    context_str = "\n".join(c['text'] for c in chunks)
+    return run_llm(question, context_str)
